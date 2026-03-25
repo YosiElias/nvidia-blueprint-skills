@@ -189,27 +189,43 @@ Note: When you control client instantiation directly (not through embedchain), u
 
 ---
 
-## Issue: ChromaDB SQLite Version Incompatibility in RHOAI
+## Issue: SQLite Version Incompatibility with ChromaDB on RHOAI
 
 **Category:** RAG / Embeddings
 
 ### Description
-RHOAI environments ship with SQLite 3.34, but ChromaDB requires SQLite version 3.35 or higher. When attempting to use ChromaDB for vector storage in RHOAI workbenches or deployments, this version mismatch causes import errors or runtime failures when ChromaDB tries to initialize its database.
+
+When using WebsiteSearchTool (which uses ChromaDB for vector storage) on Red Hat OpenShift AI workbench, the following error occurs during initialization:
+
+```
+SQLite version 3.35.0 or higher required
+```
+
+**Root Cause:**
+RHOAI workbench images inherit SQLite 3.34 from the UBI (Universal Base Image) system packages. However, ChromaDB's vector database operations require SQLite 3.35+ for proper functionality.
+
+**Symptom:**
+WebsiteSearchTool fails to initialize its vector storage backend, preventing the tool from indexing or searching documentation.
 
 ### Solution
-Redirect Python's sqlite3 module to use pysqlite3-binary instead, which bundles a newer SQLite version (3.51). Add this patch at the top of your script before importing ChromaDB:
 
-```python
-# SQLite patch: RHOAI uses SQLite 3.34 but ChromaDB needs 3.35+
-# This redirects Python to use pysqlite3-binary (bundled SQLite 3.51)
-import sys
-__import__('pysqlite3')
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-```
+1. **Add Dependency:**
+   Add `pysqlite3-binary>=0.5.4` to `requirements.txt`. This package bundles SQLite 3.51.
 
-Ensure pysqlite3-binary is installed in your environment:
-```bash
-pip install pysqlite3-binary
-```
+2. **Apply SQLite Patch:**
+   Insert the following code **at the very beginning** of your notebook, **before any other imports**:
+
+   ```python
+   # SQLite patch: RHOAI uses SQLite 3.34 but ChromaDB needs 3.35+
+   # This redirects Python to use pysqlite3-binary (bundled SQLite 3.51)
+   import sys
+   __import__('pysqlite3')
+   sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+   ```
+
+   This patch redirects Python's `sqlite3` module to use the bundled SQLite version from `pysqlite3-binary` instead of the system's outdated version.
+
+**Important:** The patch must be executed before importing any libraries that depend on SQLite (including CrewAI, ChromaDB, or any RAG tools).
 
 ---
+
