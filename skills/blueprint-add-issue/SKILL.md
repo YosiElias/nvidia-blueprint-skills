@@ -14,10 +14,9 @@ This skill helps you add a new deployment issue to the team's common issues docu
 1. Extract or ask for issue details (title, category, description, solution)
 2. Format the issue according to the standard template
 3. Show the formatted issue to the user for approval
-4. Add the issue to `issues.md`
-5. Commit the change to a new branch
-6. Push the branch
-7. Instruct user to create PR via GitHub web interface
+4. Add the issue to `issues.md` (symlinked to blueprint-issues)
+5. Run helper script to commit and push changes
+6. Instruct user to create PR via GitHub web interface
 
 ## Issue Format Template
 
@@ -54,19 +53,21 @@ When the user invokes this skill:
 3. **Show for Approval** - Display the formatted issue to the user and ask for confirmation before proceeding.
 
 4. **Add to issues.md** - Once approved:
-   - Read `skills/blueprint-issues/issues.md`
+   - Read `issues.md` (symlinked to `../blueprint-issues/issues.md`)
    - Insert the new issue before the final `---` separator (if present) or at the end
-   - Write the updated file
+   - Write the updated file to `issues.md`
 
-5. **Git Workflow** - After updating the file:
-   - Create a new branch named `add-issue-[short-slug]` (derived from issue title)
-   - Stage the modified `issues.md` file
-   - Commit with message: `docs: add [Issue Title] to team issues`
-   - Push the branch to remote
+5. **Git Workflow** - After updating the file, run the helper script:
+   ```bash
+   ./commit-and-push.sh "add-issue-[short-slug]" "docs: add [Issue Title] to team issues"
+   ```
+   The script handles: repository navigation, branch creation, staging, committing, and pushing.
 
-6. **Completion** - Inform the user:
-   - The issue has been added and pushed to branch `add-issue-[short-slug]`
-   - Tell the user to click the GitHub link from the push output to create a PR
+6. **Completion** - The script will output:
+   - Confirmation that changes were pushed to the branch
+   - Instructions to create a PR with the URL
+
+   Display this output to the user.
 
 ## Example Invocation
 
