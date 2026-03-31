@@ -213,3 +213,35 @@ pip install pysqlite3-binary
 ```
 
 ---
+
+## Issue: Misleading Documentation About Model Defaults Causes Validation Errors
+
+**Category:** Documentation / Configuration
+
+### Description
+Blueprint documentation may suggest smaller models (e.g., 8B) as viable alternatives for all tasks, leading users to configure them for structured output. When Pydantic validation errors occur (malformed JSON, missing fields, schema failures), users typically debug prompts or schemas when the actual root cause is **model capability** - smaller models cannot reliably produce complex structured output.
+
+**Symptoms:**
+- Validation errors persist despite prompt/schema fixes
+- JSON parsing failures
+- Missing required fields in output
+
+**Example from pdf-to-podcast blueprint:**
+The README (line 157) states: "By default this blueprint uses an ensemble of 3 LLMs... Llama 3.1-8B, Llama 3.1-70B, & Llama 3.1-405B" - but the actual defaults in code only use 405B and 70B. This misleads users into thinking 8B is production-ready for all tasks.
+
+
+### Solution
+
+**Troubleshooting structured output validation errors:**
+
+1. **FIRST: Check model configuration**
+   - Verify which model handles structured output
+   - Don't trust documentation recommendations alone
+
+2. **If using small model (e.g., 8B or similar):** Upgrade to larger model (e.g., 70B or similar) and retest
+
+3. **ONLY THEN:** Debug prompts/schemas after confirming adequate model size
+
+**Note:** Even if documentation lists a model as "supported", it may fail on complex structured output. Always verify actual code defaults and test for your specific use case.
+
+---
